@@ -110,7 +110,7 @@ If you want to use the model as an API service:
 - [YOLO](https://github.com/ultralytics/yolov5) for detection
 - [EasyOCR](https://github.com/JaidedAI/EasyOCR) for text recognition
 
-> **Note:** This project uses [EasyOCR](https://github.com/JaidedAI/EasyOCR) for reading text from number plates. Tesseract OCR is **not** used or required.
+> **Note:** This project uses [EasyOCR](https://github.com/JaidedAI/EasyOCR) for reading text from number plates. 
 
 ---
 
