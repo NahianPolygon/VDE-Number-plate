@@ -29,10 +29,12 @@ async def process_document_endpoint(file: UploadFile = File(...)):
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Uploaded file must be an image.")
 
+    
     with tempfile.TemporaryDirectory() as temp_base_path:
         temp_base_path_obj = Path(temp_base_path)
 
-        temp_input_folder = temp_base_path_obj / 'test_images'
+        
+        temp_input_folder = temp_base_path_obj / 'input_images_for_api_call'
         temp_input_folder.mkdir(parents=True, exist_ok=True)
 
         image_path = temp_input_folder / file.filename
@@ -42,24 +44,41 @@ async def process_document_endpoint(file: UploadFile = File(...)):
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to save uploaded file: {e}")
 
-        temp_config = Config(base_path=str(temp_base_path_obj))
+        
+        temp_config = Config(base_path=str(temp_base_path_obj), input_folder_override=str(temp_input_folder))
 
+        
         weights_source_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'weights')
         weights_dest_path = temp_base_path_obj / 'weights'
         
         if os.path.exists(weights_source_path):
             shutil.copytree(weights_source_path, weights_dest_path, dirs_exist_ok=True)
+        else:
+            
+            print(f"WARNING: Weights not found at {weights_source_path}. Ensure models are available.")
+
 
         processor = DocumentProcessor(temp_config)
 
         try:
+            
             processor.run_full_pipeline()
 
             final_results_path = temp_config.recognition_results_file
             if os.path.exists(final_results_path):
                 with open(final_results_path, 'r', encoding='utf-8') as f:
                     recognition_results = json.load(f)
+                
+                
+                # filtered_results = [
+                #     res for res in recognition_results
+                #     if res.get('image_filename') == file.filename
+                # ]
+                
+                
+                
                 return JSONResponse(content=recognition_results, status_code=200)
+
             else:
                 raise HTTPException(status_code=500, detail="Recognition results file not found after pipeline execution.")
 
