@@ -78,7 +78,7 @@ class EasyOCRRecognizer:
                                      int(max(p[0] for p in bbox)), int(max(p[1] for p in bbox))]
                         
                         processed_results.append(
-                            self._convert_numpy_to_python_types({ # APPLY CONVERSION HERE
+                            self._convert_numpy_to_python_types({
                                 "bbox": bbox_flat,
                                 "raw_bbox": bbox,
                                 "text": text,

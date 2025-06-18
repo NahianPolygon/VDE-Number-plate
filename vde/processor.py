@@ -7,7 +7,6 @@ from tqdm import tqdm
 from vde.easy_ocr import EasyOCRRecognizer
 from config.config import Config
 from vde.yolo import YOLODetector
-from vde.edge import EdgeDetector
 from vde.perspective import PerspectiveCorrector
 from vde.text_detection import TextDetector
 from vde.text_recognition import TextRecognizer
@@ -16,7 +15,6 @@ class DocumentProcessor:
     def __init__(self, config: Config):
         self.config = config
         self.yolo_detector = YOLODetector(self.config)
-        self.edge_detector = EdgeDetector()
         self.perspective_corrector = PerspectiveCorrector()
         self.text_detector = TextDetector(self.config)
         self.text_recognizer = TextRecognizer(self.config)
@@ -55,12 +53,13 @@ class DocumentProcessor:
         print("\nClearing previous output directories...")
         self._clear_folder(self.config.yolo_cropped_vehicles_folder)
         self._clear_folder(self.config.yolo_detection_vis_folder)
-        self._clear_folder(self.config.edge_output_folder)
         self._clear_folder(self.config.successful_folder)
         self._clear_folder(self.config.unsuccessful_folder)
         self._clear_folder(self.config.visualization_folder)
         self._clear_folder(self.config.corrected_output_folder)
         self._clear_folder(self.config.detection_vis_folder)
+        self._clear_folder(self.config.api_recognition_results_folder)
+        self._clear_folder(self.config.easy_ocr_results_folder)
 
         if self.config.run_yolo_detection:
             print("\n0. Running YOLOv8 Vehicle Detection...")
@@ -121,39 +120,30 @@ class DocumentProcessor:
                 print(f"🖼️ Saved YOLO visualized images to: {self.config.yolo_detection_vis_folder}")
                 print(f"✂️ Saved cropped vehicle images to: {self.config.yolo_cropped_vehicles_folder}")
 
-        if self.config.run_edge_detection:
-            print("\n1. Running Edge Detection...")
-            
-            if self.config.run_yolo_detection and yolo_detected_cropped_image_paths:
-                edge_detection_input_paths = yolo_detected_cropped_image_paths
-                print(f"    (Processing {len(edge_detection_input_paths)} images from YOLO cropped vehicles)")
-            else:
-                edge_detection_input_paths = [os.path.join(self.config.input_folder, f)
-                                              for f in os.listdir(self.config.input_folder)
-                                              if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff'))]
-                edge_detection_input_paths.sort(key=self.natural_sort_key)
-                print(f"    (Processing {len(edge_detection_input_paths)} images from original input folder)")
-
-            self.edge_detector.process_folder_edge_detection(
-                input_image_paths=edge_detection_input_paths, 
-                output_folder=self.config.edge_output_folder,
-                successful_folder=self.config.successful_folder,
-                unsuccessful_folder=self.config.unsuccessful_folder,
-                visualization_folder=self.config.visualization_folder,
-                log_file=self.config.log_file,
-                coordinates_file=self.config.coordinates_file
-            )
 
         if self.config.run_perspective_correction:
-            print("\n2. Running Perspective Correction...")
+            print("\n1. Running Perspective Correction...")
+            
+            if self.config.run_yolo_detection and yolo_detected_cropped_image_paths:
+                perspective_correction_input_paths = yolo_detected_cropped_image_paths
+                print(f"    (Processing {len(perspective_correction_input_paths)} images from YOLO cropped vehicles)")
+            else:
+                perspective_correction_input_paths = [os.path.join(self.config.input_folder, f)
+                                              for f in os.listdir(self.config.input_folder)
+                                              if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff'))]
+                perspective_correction_input_paths.sort(key=self.natural_sort_key)
+                print(f"    (Processing {len(perspective_correction_input_paths)} images from original input folder)")
+
+            os.makedirs(self.config.corrected_output_folder, exist_ok=True)
+            
             self.perspective_corrector.correct_all_images(
-                source_directory=self.config.successful_folder,
-                coordinates_json_path=self.config.coordinates_file,
-                output_directory=self.config.corrected_output_folder
+                source_directory=self.config.yolo_cropped_vehicles_folder if self.config.run_yolo_detection else self.config.input_folder,
+                output_directory=self.config.corrected_output_folder,
+                log_file=self.config.log_file
             )
 
         if self.config.run_text_detection:
-            print("\n3. Running Text Detection...")
+            print("\n2. Running Text Detection...")
             self.text_detector.get_text_detections(
                 image_folder=self.config.corrected_output_folder,
                 output_json_path=self.config.detection_results_file,
@@ -162,14 +152,14 @@ class DocumentProcessor:
             )
 
         if self.config.run_post_processing:
-            print("\n4. Post-processing Detection Results...")
+            print("\n3. Post-processing Detection Results...")
             self.text_detector.post_process_detections(
                 detection_json_path=self.config.detection_results_file,
                 output_json_path=self.config.processed_detection_file
             )
 
         if self.config.run_text_recognition:
-            print("\n5. Running Text Recognition...")
+            print("\n4. Running Text Recognition...")
             self.text_recognizer.process_text_recognition(
                 image_folder=self.config.corrected_output_folder,
                 bbox_json_file=self.config.processed_detection_file,
@@ -177,7 +167,7 @@ class DocumentProcessor:
                 log_file=self.config.log_file
             )
         if self.config.run_easy_ocr: 
-            print("\n6. Running Text Recognition (EasyOCR)...")
+            print("\n5. Running Text Recognition (EasyOCR)...")
             self.easy_ocr_recognizer.process_images_for_ocr(
                 image_folder=self.config.corrected_output_folder,
                 output_json_path=self.config.easy_ocr_results_file, 
