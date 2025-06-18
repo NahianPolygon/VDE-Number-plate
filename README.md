@@ -16,9 +16,8 @@ VDE_OCR/
 │
 ├── vde/
 │   ├── __init__.py
-│   ├── processor.py           # Image processing utilities
+│   ├── processor.py           # Pipeline utilities
 │   ├── yolo.py                # YOLO-based detection
-│   ├── edge.py                # Edge detection methods
 │   ├── perspective.py         # Perspective transformation methods
 │   ├── text_detection.py      # Text detection logic
 │   ├── text_recognition.py    # Text recognition logic
@@ -31,6 +30,7 @@ VDE_OCR/
 │   └── best.pt                # Pretrained YOLO weights
 │
 ├── main.py                    # Main script to run detection and recognition
+└── requirements.txt           # Python dependencies
 ```
 
 ---
