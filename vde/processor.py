@@ -10,6 +10,7 @@ from vde.yolo import YOLODetector
 from vde.perspective import PerspectiveCorrector
 from vde.text_detection import TextDetector
 from vde.text_recognition import TextRecognizer
+from vde.ngram_postprocessor import NgramPostprocessor
 
 class DocumentProcessor:
     def __init__(self, config: Config):
@@ -19,6 +20,7 @@ class DocumentProcessor:
         self.text_detector = TextDetector(self.config)
         self.text_recognizer = TextRecognizer(self.config)
         self.easy_ocr_recognizer = EasyOCRRecognizer(self.config)
+        self.ngram_postprocessor = NgramPostprocessor(self.config)
 
     def _clear_folder(self, folder_path):
         if os.path.exists(folder_path):
@@ -60,6 +62,7 @@ class DocumentProcessor:
         self._clear_folder(self.config.detection_vis_folder)
         self._clear_folder(self.config.api_recognition_results_folder)
         self._clear_folder(self.config.easy_ocr_results_folder)
+        self._clear_folder(self.config.ngram_results_folder)
 
         if self.config.run_yolo_detection:
             print("\n0. Running YOLOv8 Vehicle Detection...")
@@ -172,6 +175,15 @@ class DocumentProcessor:
                 image_folder=self.config.corrected_output_folder,
                 output_json_path=self.config.easy_ocr_results_file, 
                 vis_folder=self.config.easy_ocr_vis_folder,
+                log_file=self.config.log_file
+            )
+        
+        if self.config.run_ngram_post_processing:
+            print("\n6. Running N-gram Similarity Post-processing...")
+            self.ngram_postprocessor.process_and_enrich_results(
+                main_recognition_file=self.config.recognition_results_file,
+                easy_ocr_file=self.config.easy_ocr_results_file,
+                output_file=self.config.ngram_results_file,
                 log_file=self.config.log_file
             )
 

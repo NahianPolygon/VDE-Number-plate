@@ -19,6 +19,7 @@ class Config:
         self.run_post_processing = True
         self.run_text_recognition = True
         self.run_easy_ocr = True
+        self.run_ngram_post_processing = True 
 
         self.request_delay_seconds = 2.0
 
@@ -30,6 +31,7 @@ class Config:
         self.max_vertical_pad = 8
 
         self.easy_ocr_languages = ['bn']
+        self.ngram_replacement_threshold = 0.6
 
     @property
     def input_folder(self):
@@ -115,6 +117,13 @@ class Config:
     def easy_ocr_vis_folder(self):
         return os.path.join(self.easy_ocr_results_folder, 'visualizations')
 
+    @property
+    def ngram_results_folder(self):
+        return os.path.join(self.base_path, 'ngram_results')
+
+    @property
+    def ngram_results_file(self):
+        return os.path.join(self.ngram_results_folder, 'ngram_enriched_results.json')
 
     def to_dict(self):
         return {
@@ -137,6 +146,7 @@ class Config:
             'recognition_results_file': self.recognition_results_file,
             'easy_ocr_results_file': self.easy_ocr_results_file,
             'easy_ocr_vis_folder': self.easy_ocr_vis_folder,
+            'ngram_results_file': self.ngram_results_file,
             'limit': self.limit,
             'run_yolo_detection': self.run_yolo_detection,
             'run_edge_detection': self.run_edge_detection,
@@ -145,6 +155,7 @@ class Config:
             'run_post_processing': self.run_post_processing,
             'run_text_recognition': self.run_text_recognition,
             'run_easy_ocr': self.run_easy_ocr,
+            'run_ngram_post_processing': self.run_ngram_post_processing,
             'request_delay_seconds': self.request_delay_seconds,
             'horizontal_padding_ratio': self.horizontal_padding_ratio,
             'vertical_padding_ratio': self.vertical_padding_ratio,
@@ -153,6 +164,7 @@ class Config:
             'min_vertical_pad': self.min_vertical_pad,
             'max_vertical_pad': self.max_vertical_pad,
             'easy_ocr_languages': self.easy_ocr_languages,
+            'ngram_replacement_threshold': self.ngram_replacement_threshold, 
         }
 
     def update_api_config(self, detection_url=None, recognition_url=None, api_key=None):

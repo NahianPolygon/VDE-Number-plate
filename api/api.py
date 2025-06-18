@@ -64,36 +64,17 @@ async def process_document_endpoint(file: UploadFile = File(...)):
             
             processor.run_full_pipeline()
 
-            final_recognition_results = {}
             
-            main_recognition_path = temp_config.recognition_results_file
-            if os.path.exists(main_recognition_path):
-                with open(main_recognition_path, 'r', encoding='utf-8') as f:
-                    final_recognition_results = json.load(f)
-            else:
-                print(f"WARNING: Main recognition results file not found at {main_recognition_path}. Continuing without it.")
+            final_output_path = temp_config.ngram_results_file 
+            if os.path.exists(final_output_path):
+                with open(final_output_path, 'r', encoding='utf-8') as f:
+                    final_results = json.load(f)
+                
+                return JSONResponse(content=final_results, status_code=200)
 
-            
-            easy_ocr_path = temp_config.easy_ocr_results_file
-            if os.path.exists(easy_ocr_path):
-                with open(easy_ocr_path, 'r', encoding='utf-8') as f:
-                    easy_ocr_results = json.load(f)
-                
-                
-                for image_filename, easy_data in easy_ocr_results.items():
-                    if image_filename in final_recognition_results:
-                        final_recognition_results[image_filename]["easy_ocr_recognized_texts"] = easy_data
-                    else:
-                        
-                        final_recognition_results[image_filename] = {"easy_ocr_recognized_texts": easy_data}
             else:
-                print(f"WARNING: EasyOCR results file not found at {easy_ocr_path}. EasyOCR results will not be included.")
-            
-            
-            if not final_recognition_results:
-                 raise HTTPException(status_code=500, detail="No recognition results (neither main nor EasyOCR) found after pipeline execution.")
-            
-            return JSONResponse(content=final_recognition_results, status_code=200)
+                raise HTTPException(status_code=500, detail="N-gram enriched results file not found after pipeline execution.") 
+
 
         except Exception as e:
             error_message = f"Document processing failed: {e}"
