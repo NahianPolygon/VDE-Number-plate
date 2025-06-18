@@ -1,5 +1,10 @@
-opencv-python==4.9.0.80
-numpy==1.26.4
-Pillow==10.3.0
+fastapi
+uvicorn
 requests==2.32.3
 tqdm==4.66.4
+Pillow==10.3.0
+opencv-python==4.9.0.80
+numpy==1.26.4
+ultralytics
+easyocr
+torch
