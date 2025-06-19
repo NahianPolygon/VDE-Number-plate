@@ -57,7 +57,11 @@ class TextRecognizer:
             sorted_image_names = sorted(bbox_data.keys(), key=self.natural_sort_key)
 
             for image_name in tqdm(sorted_image_names, desc="Processing images for recognition", unit="image"):
-                bboxes = bbox_data[image_name] 
+                bboxes_raw = bbox_data[image_name] 
+                
+                unique_bboxes_tuples = set(tuple(b) for b in bboxes_raw)
+                bboxes_to_send = [list(b) for b in unique_bboxes_tuples]
+                
                 image_path = os.path.join(image_folder, image_name)
                 if not os.path.exists(image_path):
                     not_found_images += 1
@@ -65,17 +69,31 @@ class TextRecognizer:
                     continue 
 
                 img_str = self.image_to_base64(image_path)
-                payload = {"img": f"data:image/jpeg;base64,{img_str}", "bboxes": bboxes}
+                payload = {"img": f"data:image/jpeg;base64,{img_str}", "bboxes": bboxes_to_send}
 
                 try:
                     self._apply_api_delay() 
                     response = requests.get(self.recognition_api_url, headers=self.recognition_headers, json=payload)
                     response.raise_for_status()
                     recognition_results = response.json()
+                    
+                    print(f"DEBUG: Raw API recognition_results for {image_name}: {json.dumps(recognition_results, indent=2, ensure_ascii=False)}")
+                    
+                    deduplicated_results_as_tuples = set()
+                    for item in recognition_results:
+                        if isinstance(item, list):
+                            hashable_item = tuple(tuple(sorted(d.items())) for d in item)
+                            deduplicated_results_as_tuples.add(hashable_item)
+                        else:
+                            hashable_item = tuple(sorted(item.items()))
+                            deduplicated_results_as_tuples.add((hashable_item,))
 
-                    cleaned_results = [recognized if isinstance(recognized, list) else [recognized] 
-                                     for recognized in recognition_results]
-                    results[image_name] = {"bboxes": bboxes, "recognized_texts": cleaned_results}
+                    cleaned_results = [
+                        [dict(sorted_item_tuple) for sorted_item_tuple in inner_tuple]
+                        for inner_tuple in sorted(list(deduplicated_results_as_tuples))
+                    ]
+                    
+                    results[image_name] = {"bboxes": bboxes_to_send, "recognized_texts": cleaned_results}
                     successful_recognitions += 1
                     log.write(f"✓ Recognized text for: {image_name}\n") 
                 except requests.exceptions.RequestException as e:
