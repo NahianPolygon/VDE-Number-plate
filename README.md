@@ -6,6 +6,13 @@ A Python-based solution for vehicle number plate detection and recognition, with
 
 ## Project Structure
 
+This seems to be a simple formatting issue, likely caused by a non-standard space character in the original text. The first example you provided contains a non-breaking space character (Unicode `U+00A0`), which can cause display problems. The second example is correctly formatted with standard spaces.
+
+I will provide the correct text that you can directly copy and paste into your README file to fix this. No further searches are required as this is a formatting issue with the provided text.
+
+Here is the corrected version of the project structure block for you to copy and paste:
+
+```
 VDE_OCR/
 │
 ├── test_images/                 # Sample images for testing
@@ -30,7 +37,7 @@ VDE_OCR/
 │
 ├── main.py                      # Main script to run the full pipeline on a local folder
 └── requirements.txt             # Python dependencies
-
+```
 
 ---
 
